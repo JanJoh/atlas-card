@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; padding: 16px; font-family: Roboto, system-ui, sans-serif; display: grid; gap: 16px; }
+  body.light { background: #fafafa; --card-background-color: #fff; --primary-text-color: #212121; --secondary-text-color: #616161;
+    --secondary-background-color: #e5e5e5; --divider-color: rgba(0, 0, 0, 0.12); --primary-color: #03a9f4; }
+  body.dark { background: #111; --card-background-color: #1c1c1c; --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b;
+    --secondary-background-color: #282828; --divider-color: #3a3a3a; --primary-color: #03a9f4; }
+  ha-card { display: block; background: var(--card-background-color); border-radius: 12px; border: 1px solid var(--divider-color); }
+</style>
+</head>
+<body>
+<div id="host"></div>
+<script>window.module = undefined;</script>
+<script src="../dist/atlas-card.js"></script>
+<script>
+  // Preview harness with made-up values: ?mode=heat|hw|idle&theme=light|dark&width=760&detail=1
+  const q = new URLSearchParams(location.search);
+  document.body.className = q.get("theme") || "light";
+  document.getElementById("host").style.width = (q.get("width") || 760) + "px";
+  const P = "diplomat_inverter_duo";
+  const base = {
+    [`sensor.${P}_outdoor_temperature`]: "3.2", [`sensor.${P}_first_prioritised_demand`]: "Heat",
+    [`binary_sensor.${P}_compressor_control_signal`]: "on", [`sensor.${P}_compressor_speed_percent`]: "58",
+    [`sensor.${P}_compressor_speed_rpm`]: "3480", [`sensor.${P}_compressor_current_gear`]: "6",
+    [`sensor.${P}_compressor_available_gears`]: "10", [`number.${P}_maximum_allowed_gear_in_heating`]: "10",
+    [`number.${P}_minimum_allowed_gear_in_heating`]: "1",
+    [`number.${P}_maximum_allowed_gear_in_tap_water`]: "10", [`number.${P}_minimum_allowed_gear_in_tap_water`]: "3",
+    [`sensor.${P}_compressor_temporarily_blocked`]: "0", [`sensor.${P}_brine_in_temperature`]: "4.8",
+    [`sensor.${P}_brine_out_temperature`]: "1.7", [`sensor.${P}_brine_circulation_pump_speed`]: "55",
+    [`sensor.${P}_condenser_circulation_pump_speed`]: "48", [`sensor.${P}_condenser_in_temperature`]: "31.0",
+    [`sensor.${P}_condenser_out_temperature`]: "36.4", [`sensor.${P}_tap_water_top_temperature`]: "57.0",
+    [`binary_sensor.${P}_heating_season_active`]: "on",
+    [`number.${P}_heating_season_stop_temperature`]: "15", [`sensor.${P}_heating_season_integral_value`]: "-150",
+    [`binary_sensor.${P}_sum_alarm`]: "off", [`sensor.${P}_high_pressure_side`]: "21.8", [`sensor.${P}_low_pressure_side`]: "3.6",
+    [`sensor.${P}_bubble_point`]: "35.1", [`sensor.${P}_dew_point`]: "-3.2", [`sensor.${P}_compressor_operating_hours`]: "1240",
+    [`sensor.${P}_tap_water_operating_hours`]: "310", [`binary_sensor.${P}_power_input_phase_detection_alarm`]: "off",
+    [`binary_sensor.${P}_hgw_regulation_control_signal`]: "on", [`sensor.${P}_hgw_supply_line_temperature`]: "61.2",
+    [`switch.${P}_enable_hgw`]: "on", [`binary_sensor.${P}_hgw_sensor_alarm`]: "off", [`sensor.${P}_discharge_pipe_temperature`]: "78.4",
+    "sensor.power": "2400", "sensor.hgw_stop": "55", "sensor.immersion": "0",
+  };
+  const modes = {
+    heat: {},
+    hw: { [`sensor.${P}_first_prioritised_demand`]: "Hot water", [`sensor.${P}_compressor_current_gear`]: "8",
+      [`sensor.${P}_compressor_speed_percent`]: "74", [`sensor.${P}_compressor_speed_rpm`]: "4450", "sensor.power": "2900",
+      [`sensor.${P}_tap_water_top_temperature`]: "44", [`binary_sensor.${P}_hgw_regulation_control_signal`]: "off",
+      [`sensor.${P}_discharge_pipe_temperature`]: "92", [`sensor.${P}_condenser_circulation_pump_speed`]: "80" },
+    idle: { [`binary_sensor.${P}_compressor_control_signal`]: "off", [`sensor.${P}_first_prioritised_demand`]: "No demand",
+      [`sensor.${P}_brine_circulation_pump_speed`]: "0", [`sensor.${P}_condenser_circulation_pump_speed`]: "42", "sensor.power": "16",
+      [`sensor.${P}_compressor_current_gear`]: "0", [`sensor.${P}_compressor_speed_percent`]: "0", [`sensor.${P}_compressor_speed_rpm`]: "0",
+      [`binary_sensor.${P}_hgw_regulation_control_signal`]: "off", [`sensor.${P}_discharge_pipe_temperature`]: "41" },
+  };
+  const st = { ...base, ...(modes[q.get("mode") || "heat"]) };
+  const states = {};
+  const changed = new Date(new Date().setHours(16, 33, 0, 0)).toISOString();
+  for (const [k, v] of Object.entries(st)) states[k] = { state: v, last_changed: changed, attributes: {} };
+  const c = document.createElement("atlas-card");
+  c.setConfig({
+    borehole_depth: 120,
+    entities: { power: "sensor.power", immersion: "sensor.immersion", hgw_stop: "sensor.hgw_stop", energy: "sensor.e1" },
+  });
+  c._stats = { pump: 11.4, brine: 1.2 };
+  c._statsAt = Date.now();
+  if (q.get("detail")) c._detail = true;
+  c.hass = { states, locale: { language: q.get("lang") || "sv" } };
+  if (+(q.get("width") || 760) < 560) { c._compact = true; c._render(); }
+  document.getElementById("host").appendChild(c);
+</script>
+</body>
+</html>
