@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-11-01
+
+- **Brine colours follow temperature.** The colder side, brine out on its way back to the borehole, is now the deeper blue and brine in the paler one, the same way the radiator supply is a stronger orange than the return.
+
 ## 0.2.0 — 2026-11-01
 
 - **HGW values moved into the heat pump, no separate box.** The hot gas (discharge pipe) temperature is shown in the compressor box, where the immersion heater row sits when one is configured (next to the HGW label otherwise). The temperature going to the tank is shown in the HGW label itself ("HGW 63°") while the loop runs. The box to the right of the tank is gone; the coloured loop and label show that HGW runs.

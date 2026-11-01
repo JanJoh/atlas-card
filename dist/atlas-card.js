@@ -12,7 +12,7 @@
  * MIT License
  */
 
-const CARD_VERSION = "0.2.0";
+const CARD_VERSION = "0.2.1";
 
 // Entity defaults: the thermiagenesis entity ids (the integration names every entity after the
 // same device, whatever the model). Anything else (power meter, price, the valve, the hot gas
@@ -61,7 +61,8 @@ const DEFAULT_ENTITIES = {
 };
 
 const COLORS = {
-  brineIn: "#2f6fb3", brineOut: "#8db8e3",
+  // Brine in (from the borehole) is the warmer side, so the paler blue; brine out, the colder, deeper blue
+  brineIn: "#8db8e3", brineOut: "#2f6fb3",
   heat: "#d9622b", heatRet: "#f0a77f",
   hw: "#d0453a", hwRet: "#ec9a92",
   tap: "#d0453a", idle: "var(--atlas-idle, rgba(127, 127, 127, 0.45))",
