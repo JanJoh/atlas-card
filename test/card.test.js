@@ -57,7 +57,7 @@ test("default HGW entities are the thermiagenesis inverter ones", () => {
   assert.equal(DEFAULT_ENTITIES.discharge, `sensor.${P}_discharge_pipe_temperature`);
 });
 
-test("heating with HGW running: loop coloured, box says it heats the tank", () => {
+test("heating with HGW running: loop coloured, hot gas in the compressor box, supply in the HGW label", () => {
   const c = card();
   const m = c._model();
   assert.equal(m.heatOn, true);
@@ -66,7 +66,10 @@ test("heating with HGW running: loop coloured, box says it heats the tank", () =
   assert.equal(m.hgw.gas, "78°");
   assert.equal(m.hgw.supply, "61°");
   const h = html(c);
-  assert.match(h, /Hetgasväxlare \(HGW\)/);
+  assert.ok(!h.includes("Hetgasväxlare (HGW)"), "no separate HGW box");
+  assert.match(h, />Hetgas</);
+  assert.match(h, />78°</);
+  assert.match(h, />HGW 61°</);
   assert.match(h, /stroke="#a8327a"/);
   assert.match(h, /Extern/);
   assert.ok(!h.includes("Beredare idag"));
@@ -96,13 +99,14 @@ test("without the regulation signal a configured hot gas pump decides", () => {
   assert.equal(off.hgw.active, false);
 });
 
-test("HGW sensor alarm shows in the box and the explanation line", () => {
+test("HGW sensor alarm shows in the HGW label and the explanation line", () => {
   const c = card({ [`binary_sensor.${P}_hgw_sensor_alarm`]: "on" });
   const m = c._model();
   assert.equal(m.hgw.alarm, true);
   assert.match(m.why, /HGW-givaren larmar/);
   assert.equal(m.tone, "warn");
-  assert.match(html(c), /Givarlarm/);
+  assert.match(html(c), /HGW givarlarm/);
+  assert.match(html(c), /hgwchip alarm/);
 });
 
 test("hot water: valve turns, coil branch live", () => {
@@ -133,16 +137,29 @@ test("refrigerant view lists the HGW rows", () => {
   assert.ok(rows.includes("Hetgas (tryckrör): 78,4 °C"), rows.join(" | "));
   assert.ok(rows.includes("HGW påslagen: Ja"));
   assert.ok(rows.includes("HGW · Givarlarm: Inget"));
+  assert.ok(rows.includes("Hetgasväxlare (HGW): Laddar beredaren"));
+  assert.ok(rows.includes("Till beredaren: 61°"));
 });
 
 test("English", () => {
   const c = card({}, {}, "en");
   assert.equal(c._model().hgw.status, "Heating the tank");
-  assert.match(html(c), /Hot gas exchanger \(HGW\)/);
+  assert.match(html(c), />Hot gas</);
+  assert.match(html(c), />HGW 61°</);
   assert.match(html(c), /External/);
 });
 
 test("registered as atlas-card", () => {
   assert.ok(customElements.get("atlas-card"));
   assert.ok(window.customCards.some((x) => x.type === "atlas-card"));
+});
+
+test("with an immersion heater the hot gas value moves next to the HGW label", () => {
+  const c = card({ "sensor.imm": "0" }, { entities: { immersion: "sensor.imm" } });
+  assert.match(html(c), />Hetgas 78°</);
+});
+
+test("the optional hot gas pump stop limit is listed in the refrigerant view", () => {
+  const rows = card({ "sensor.hgw_stop": "55" }, { entities: { hgw_stop: "sensor.hgw_stop" } })._detailModel().at(-1).rows.filter(Boolean).map(([l, v]) => `${l}: ${v}`);
+  assert.ok(rows.includes("Hetgaspump, stoppgräns: 55 °C"), rows.join(" | "));
 });

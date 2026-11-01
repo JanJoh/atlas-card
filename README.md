@@ -13,10 +13,10 @@ It draws the system as it is assumed to be plumbed:
 - **Compressor:** current gear against the allowed maximum, speed, and the internal immersion heater.
 - **Diverting valve:** splits the condenser's supply between the radiators and the external water heater's coil. The arrow turns and the inactive branch greys out.
 - **Radiators:** supply, return, ΔT and heating stop.
-- **HGW loop:** hot gas from the compressor heats tank water in a separate exchanger. A pump takes cold water from the bottom of the tank and returns it hot to the top, independently of the valve. The loop is coloured while it runs. A box next to the tank shows the status, the hot gas (discharge pipe) temperature and the temperature going to the tank.
+- **HGW loop:** hot gas from the compressor heats tank water in a separate exchanger. A pump takes cold water from the bottom of the tank and returns it hot to the top, independently of the valve. The loop is coloured while it runs. The hot gas (discharge pipe) temperature is shown in the compressor box, and the temperature going to the tank in the HGW label where the loop leaves the heat pump ("HGW 63°"). A sensor alarm turns the label yellow and is named in the explanation line.
 - **External water heater:** the top temperature, plus the bottom one if your pump has that sensor. Tap it for a chart of the tank temperatures over 1, 3 or 7 days.
 
-Tap the compressor for the refrigerant circuit: pressures, operating hours, allowed gears, discharge pipe temperature, whether HGW is enabled, the HGW sensor alarm, heating stop and alarms. Every value opens its entity's more-info dialog.
+Tap the compressor for the refrigerant circuit: pressures, operating hours, allowed gears, discharge pipe temperature, the HGW status and supply temperature, whether HGW is enabled, the HGW sensor alarm, heating stop and alarms. Every value opens its entity's more-info dialog.
 
 | Heating, HGW heating the tank | Hot water through the valve, HGW idle |
 |---|---|
@@ -78,7 +78,7 @@ entities:
   valve: binary_sensor.hot_water_valve     # on = hot water; without it the card uses the demand
   immersion: sensor.diplomat_inverter_duo_internal_additional_heater_current_step   # if your pump has it
   hgw_pump: switch.hot_gas_pump            # optional: binary or speed (%)
-  hgw_stop: sensor.hot_gas_pump_stop_temperature   # optional: shown as "Stops below …"
+  hgw_stop: sensor.hot_gas_pump_stop_temperature   # optional: listed in the refrigerant view
 notices:
   - entity: input_boolean.load_guard
     text: The load guard limits the compressor.
@@ -88,11 +88,11 @@ notices:
 |---|---|
 | `title` | Card title (default `Atlas`). |
 | `borehole_depth` | Depth in metres, written under the borehole. |
-| `hgw` | `false` hides the HGW loop and box, for an Atlas without a hot gas exchanger. Default `true`. |
+| `hgw` | `false` hides the HGW loop, label and values, for an Atlas without a hot gas exchanger. Default `true`. |
 | `entities.<key>` | Override any entity. The keys are listed in `DEFAULT_ENTITIES` at the top of `dist/atlas-card.js`. |
 | `entities.valve` | Binary sensor that is `on` while the valve points to hot water. Without it the card infers the valve position from the demand. |
 | `entities.hgw_pump` | Optional hot gas pump: a binary sensor or switch, or a speed in %. Drawn on the pump symbol; used to tell if HGW runs when `hgw_active` is missing. |
-| `entities.hgw_stop` | Optional stop temperature for the hot gas pump, shown in the HGW box. |
+| `entities.hgw_stop` | Optional stop temperature for the hot gas pump, listed in the refrigerant view. |
 | `entities.immersion` | Binary sensor (`on`) or step sensor (`> 0`) for the internal immersion heater. |
 | `immersion_steps` | Number of immersion heater steps drawn as a bar (default `3`). |
 | `immersion_step_kw` | Optional kW per step; shows the current power next to the bar. |

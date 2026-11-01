@@ -12,7 +12,7 @@
  * MIT License
  */
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 // Entity defaults: the thermiagenesis entity ids (the integration names every entity after the
 // same device, whatever the model). Anything else (power meter, price, the valve, the hot gas
@@ -98,7 +98,7 @@ const T = {
     hgw: "Hetgasväxlare (HGW)", hgwShort: "HGW", hgwOn: "Laddar beredaren", hgwIdle: "Står still", hgwOff: "Avstängd",
     hgwShortStatus: { on: "Laddar", idle: "Vilar", off: "Av", alarm: "Larm" },
     hgwAlarm: "Givarlarm", hgwGas: "Hetgas", hgwToTank: "Till beredaren", hgwStop: (v) => `Stannar under ${v}`,
-    hgwPump: "Hetgaspump", hgwEnabled: "HGW påslagen", discharge: "Hetgas (tryckrör)", tankExt1: "Extern", tankExt2: "beredare",
+    hgwPump: "Hetgaspump", hgwPumpStop: "Hetgaspump, stoppgräns", hgwEnabled: "HGW påslagen", discharge: "Hetgas (tryckrör)", tankExt1: "Extern", tankExt2: "beredare",
     whyHgwAlarm: "HGW-givaren larmar.",
   },
   en: {
@@ -128,7 +128,7 @@ const T = {
     hgw: "Hot gas exchanger (HGW)", hgwShort: "HGW", hgwOn: "Heating the tank", hgwIdle: "Idle", hgwOff: "Turned off",
     hgwShortStatus: { on: "Heating", idle: "Idle", off: "Off", alarm: "Alarm" },
     hgwAlarm: "Sensor alarm", hgwGas: "Hot gas", hgwToTank: "To the tank", hgwStop: (v) => `Stops below ${v}`,
-    hgwPump: "Hot gas pump", hgwEnabled: "HGW enabled", discharge: "Hot gas (discharge)", tankExt1: "External", tankExt2: "tank",
+    hgwPump: "Hot gas pump", hgwPumpStop: "Hot gas pump, stop limit", hgwEnabled: "HGW enabled", discharge: "Hot gas (discharge)", tankExt1: "External", tankExt2: "tank",
     whyHgwAlarm: "The HGW sensor reports an alarm.",
   },
 };
@@ -389,6 +389,7 @@ class AtlasCard extends HTMLElement {
   _detailModel() {
     const hass = this._hass, e = this._config.entities, t = this._t, lang = this._lang;
     const n = (k) => num(hass, e[k]);
+    const m_hgw = this._config.hgw === false ? null : this._hgwModel();
     const rng = (a, b) => `${n(a) ?? "–"}–${n(b) ?? "–"}`;
     return [
       ["hp", fmt(n("high_pressure"), 1, "bar", lang), `${t.bubble} ${fmt(n("bubble_point"), 1, "°C", lang)}`, "high_pressure", "warm"],
@@ -402,6 +403,9 @@ class AtlasCard extends HTMLElement {
         ...(this._config.hgw === false ? [] : [
           null,
           [t.discharge, fmt(n("discharge"), 1, "°C", lang), e.discharge],
+          [t.hgw, m_hgw ? (m_hgw.alarm ? t.hgwAlarm : m_hgw.status) : "–", e.hgw_active],
+          [t.hgwToTank, m_hgw ? m_hgw.supply : "–", e.hgw_supply],
+          ...(e.hgw_stop ? [[t.hgwPumpStop, fmt(num(hass, e.hgw_stop), 0, "°C", lang), e.hgw_stop]] : []),
           [t.hgwEnabled, e.hgw_enabled && str(hass, e.hgw_enabled) !== null ? (isOn(hass, e.hgw_enabled) ? t.yes : t.no) : "–", e.hgw_enabled],
           [`${t.hgwShort} · ${t.hgwAlarm}`, isOn(hass, e.hgw_alarm) ? t.active : t.noAlarm, e.hgw_alarm],
           null,
@@ -569,21 +573,17 @@ class AtlasCard extends HTMLElement {
   ${m.seasonKnown ? `<g class="season" data-entity="${esc(e.heating_season_stop)}">${m.integral ? `<title>${esc(m.integral)}</title>` : ""}<rect x="568" y="140" width="136" height="20" rx="10" class="pill ${m.heatStop ? "stop" : ""}"/>${txt(636, 154, (m.heatStop ? t.heatStopOn : t.heatStopOff)(m.stopLimit), `xs ${m.heatStop ? "stoptxt strong" : ""}`, "", "middle")}</g>` : ""}
 
   ${m.hgw ? `
-  <g class="hgw" data-entity="${esc(e.hgw_active)}">
-    <rect x="296" y="190" width="58" height="20" rx="5" class="hgwchip ${m.hgw.active ? "on" : ""}"/>
-    ${txt(325, 204, t.hgwShort, `xs strong ${m.hgw.active ? "hgwtxt" : "muted"}`, "", "middle")}
+  <g class="hgw" data-entity="${esc(e.hgw_supply)}">
+    <rect x="272" y="190" width="82" height="20" rx="5" class="hgwchip ${m.hgw.alarm ? "alarm" : m.hgw.active ? "on" : ""}"/>
+    ${txt(313, 204, m.hgw.alarm ? `${t.hgwShort} ${t.hgwAlarm.toLowerCase()}` : m.hgw.active ? `${t.hgwShort} ${m.hgw.supply}` : t.hgwShort, `xs strong ${m.hgw.alarm ? "warn" : m.hgw.active ? "" : "muted"}`, "", "middle")}
   </g>
+  <g data-entity="${esc(e.discharge)}">${m.immersion
+    ? `${txt(185, 204, `${t.hgwGas} ${m.hgw.gas}`, "sm")}`
+    : `${txt(185, 164, t.hgwGas, "lbl")}${txt(345, 166, m.hgw.gas, "val big", e.discharge, "end")}`}</g>
   <path d="M354 200H410A8 8 0 0 1 426 200H470" fill="none" stroke="${col.hgw}" stroke-width="4" stroke-linecap="round"/>
   ${pipe(310, 304, 470, 304, col.hgwRet)}${pipe(310, 236, 310, 304, col.hgwRet)}
   ${pumpSym(386, 200, m.hgw.pumpPct, c.hgw, e.hgw_pump || e.hgw_active)}${m.hgw.pumpText ? txt(386, 226, m.hgw.pumpText, "xs", e.hgw_pump, "middle") : ""}
   ${arrow(450, 200, 0, col.hgw)}${arrow(390, 304, 180, col.hgwRet)}${arrow(310, 272, 270, col.hgwRet)}
-  <g class="${m.hgw.active ? "" : "dim"}" data-entity="${esc(e.hgw_supply)}">
-    <rect x="560" y="214" width="152" height="106" rx="12" class="box ${m.hgw.active ? "hgwbox" : ""} ${m.hgw.alarm ? "warnbox" : ""}"/>
-    ${txt(572, 234, t.hgw, `lbl ${m.hgw.active ? "hgwtxt" : ""} full`)}${txt(572, 234, t.hgwShort, "lbl short")}
-    ${txt(572, 256, m.hgw.alarm ? t.hgwAlarm : m.hgw.status, `val big full ${m.hgw.alarm ? "warn" : ""}`)}${txt(572, 258, m.hgw.short, `val big short ${m.hgw.alarm ? "warn" : ""}`)}
-    <g data-entity="${esc(e.discharge)}">${txt(572, 278, t.hgwGas, "sm opt")}${txt(700, 278, m.hgw.gas, "val", e.discharge, "end")}</g>
-    ${txt(572, 298, t.hgwToTank, "sm opt")}${txt(700, 298, m.hgw.supply, "val", e.hgw_supply, "end")}
-    ${m.hgw.stop ? txt(572, 314, m.hgw.stop, "xs muted opt", e.hgw_stop) : ""}
   </g>` : ""}
 
   <g class="tank" data-action="tank" tabindex="0" role="button" aria-label="${esc(t.tankOpen)}">
@@ -837,8 +837,9 @@ svg .hpbox { fill: var(--secondary-background-color, #fafbfc); }
 svg .box.warnbox { fill: #fff4dc; stroke: #e0b65c; }
 svg .box.hgwbox { fill: rgba(168, 50, 122, 0.07); stroke: #a8327a; }
 svg .hgwchip { fill: var(--secondary-background-color, #f6f7f9); stroke: var(--divider-color, #c9cdd2); }
+svg .hgwchip.alarm { fill: #fff4dc; stroke: #e0b65c; }
 svg .hgwchip.on { fill: rgba(168, 50, 122, 0.12); stroke: #a8327a; }
-svg text.hgwtxt { fill: #8a2a66; }
+svg text.hgwtxt { fill: var(--primary-text-color); }
 svg .hgw { cursor: pointer; }
 svg .hp { cursor: pointer; outline: none; }
 svg .hp:focus-visible .hpbox { stroke: var(--primary-color); stroke-width: 2; }

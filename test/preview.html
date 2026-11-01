@@ -59,7 +59,7 @@
   const c = document.createElement("atlas-card");
   c.setConfig({
     borehole_depth: 120,
-    entities: { power: "sensor.power", immersion: "sensor.immersion", hgw_stop: "sensor.hgw_stop", energy: "sensor.e1" },
+    entities: { power: "sensor.power", hgw_stop: "sensor.hgw_stop", energy: "sensor.e1" },
   });
   c._stats = { pump: 11.4, brine: 1.2 };
   c._statsAt = Date.now();
