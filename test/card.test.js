@@ -163,3 +163,17 @@ test("the optional hot gas pump stop limit is listed in the refrigerant view", (
   const rows = card({ "sensor.hgw_stop": "55" }, { entities: { hgw_stop: "sensor.hgw_stop" } })._detailModel().at(-1).rows.filter(Boolean).map(([l, v]) => `${l}: ${v}`);
   assert.ok(rows.includes("Hetgaspump, stoppgräns: 55 °C"), rows.join(" | "));
 });
+
+test("immersion heater alone during legionella: the hot water branch stays live, brine is idle", () => {
+  const c = card({
+    [`sensor.${P}_first_prioritised_demand`]: "Anti legionella",
+    [`binary_sensor.${P}_compressor_control_signal`]: "off",
+    [`sensor.${P}_compressor_speed_percent`]: "0",
+    [`sensor.${P}_brine_circulation_pump_speed`]: "0",
+    "sensor.imm": "2",
+  }, { entities: { immersion: "sensor.imm" } });
+  const m = c._model();
+  assert.equal(m.hwOn, true);
+  assert.equal(m.heatOn, false);
+  assert.equal(m.brineOn, false);
+});

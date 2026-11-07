@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 — 2026-11-07
+
+- The supply pipes to the radiators or the hot water tank stay coloured while the immersion heater runs on its own, for example at the end of a legionella cycle. They used to turn grey as soon as the compressor stopped, though the condenser pump still carries the heater's heat.
+
 ## 0.2.1 — 2026-11-01
 
 - **Brine colours follow temperature.** The colder side, brine out on its way back to the borehole, is now the deeper blue and brine in the paler one, the same way the radiator supply is a stronger orange than the return.
